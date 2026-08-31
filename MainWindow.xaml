@@ -1,0 +1,1419 @@
+<Window x:Class="FoamWorkbench.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:FoamWorkbench.Controls"
+        mc:Ignorable="d"
+        Title="FOAM WORKBENCH — OpenFOAM for Windows"
+        Icon="Assets/FoamWorkbench.ico"
+        Height="920" Width="1500" MinHeight="760" MinWidth="1180"
+        Background="{StaticResource WindowBrush}"
+        Foreground="{StaticResource TextBrush}"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextHintingMode="Fixed"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing">
+    <Grid Background="{StaticResource WindowBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="70"/>
+            <RowDefinition Height="66"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#111923" BorderBrush="#263548"
+                BorderThickness="0,0,0,1" Padding="24,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="42" Height="42" CornerRadius="13" Background="{StaticResource PrimaryGradient}"
+                            BorderBrush="#A7B0FF" BorderThickness="1">
+                        <TextBlock Text="F" Foreground="#FFFFFF" FontSize="22" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="FOAM WORKBENCH" FontSize="18" FontWeight="SemiBold"/>
+                        <TextBlock Text="OpenFOAM control studio for Windows" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="런타임 확인" Click="ProbeRuntime_Click" Margin="0,0,8,0"/>
+                    <Button Content="케이스 열기" Click="OpenCase_Click" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                    <Button Content="ParaView" Click="OpenParaView_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="24,8,24,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.35*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="14,8" Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock Text="현재 케이스" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                    <TextBlock x:Name="CaseNameText" Text="열린 케이스 없음" FontSize="14" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="CasePathText" Text="폴더를 선택해 시작하세요" Foreground="{StaticResource MutedBrush}"
+                               FontSize="10" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Style="{StaticResource Card}" Padding="14,8" Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock Text="OPENFOAM 엔진" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="EngineDot" Fill="{StaticResource WarningBrush}" Width="8" Height="8" Margin="0,0,7,0"/>
+                        <TextBlock x:Name="EngineStatusText" Text="확인 필요" FontSize="14" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock x:Name="EngineDetailText" Text="WSL2 / Ubuntu-24.04" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14,8" Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock Text="솔버" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                    <TextBlock x:Name="SolverText" Text="—" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="SolverModuleText" Text="controlDict에서 자동 감지" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="3" Style="{StaticResource Card}" Padding="14,8">
+                <StackPanel>
+                    <TextBlock Text="작업 상태" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                    <TextBlock x:Name="JobStatusText" Text="대기" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="JobTimeText" Text="실행 중인 프로세스 없음" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <TabControl Grid.Row="2" x:Name="WorkspaceTabs" Margin="24,8,24,14"
+                    Background="Transparent">
+            <TabItem Header="00  Case Type">
+                <Grid Margin="0,14,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="해석 모드" Style="{StaticResource PageTitle}"/>
+                            <TextBlock Margin="0,6,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                       Text="같은 OpenFOAM 14 엔진을 사용하되 외부유동과 다층 다공성 필터의 입력·사전을 서로 분리합니다."/>
+                        </StackPanel>
+                    </Border>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,7,0" Padding="28">
+                            <StackPanel>
+                                <RadioButton x:Name="ExternalModeRadio" Content="External Aerodynamics"
+                                             GroupName="CaseType" FontSize="20" FontWeight="SemiBold"
+                                             Foreground="{StaticResource TextBrush}" IsChecked="True"
+                                             Checked="ExternalMode_Checked"/>
+                                <TextBlock Margin="0,16,0,18" Foreground="{StaticResource MutedBrush}"
+                                           TextWrapping="Wrap" LineHeight="20"
+                                           Text="STEP/STL 외부 형상, snappyHexMesh, 층류·k-ω SST, 힘·마찰저항·계수 및 기존 모든 CAD 작업을 그대로 사용합니다."/>
+                                <Button Content="외부유동 설정 열기" Click="OpenExternalMode_Click"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource Card}" Margin="7,0,0,0" Padding="28">
+                            <StackPanel>
+                                <RadioButton x:Name="PorousModeRadio" Content="Porous Media"
+                                             GroupName="CaseType" FontSize="20" FontWeight="SemiBold"
+                                             Foreground="{StaticResource TextBrush}"
+                                             Checked="PorousMode_Checked"/>
+                                <TextBlock Margin="0,16,0,18" Foreground="{StaticResource MutedBrush}"
+                                           TextWrapping="Wrap" LineHeight="20"
+                                           Text="TreeShield 7층 구조, 층별 cellZone·Darcy/Forchheimer 저항, 중력·강우·수두, 해석 검증과 결과 보고를 설정합니다."/>
+                                <Button Content="다공성 필터 설정 열기" Click="OpenPorousMode_Click"
+                                        Style="{StaticResource PrimaryButton}"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <TabItem x:Name="ExternalCadTab" Header="01  External Aerodynamics">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource Card}" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="설정 프리셋" Style="{StaticResource SectionTitle}"/>
+                                    <TextBlock x:Name="PresetStatusText" Margin="0,4,16,0"
+                                               Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                               Text="메시·유동·계산·결과 변수 설정을 파일로 저장해 다른 모델에 다시 사용할 수 있습니다."/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="프리셋 불러오기" Click="LoadPreset_Click"
+                                        MinWidth="138" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Content="현재 설정 저장" Click="SavePreset_Click"
+                                        Style="{StaticResource PrimaryButton}" MinWidth="138"
+                                        Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="CAD 파일과 저장 위치" Style="{StaticResource SectionTitle}"/>
+                                    <TextBlock Margin="0,4,0,16" Foreground="{StaticResource MutedBrush}"
+                                               TextWrapping="Wrap"
+                                               Text="STEP/STP/IGES/BREP/STL을 가져옵니다. 케이스와 모든 시간 결과는 선택한 드라이브·폴더 아래에 저장됩니다."/>
+
+                                    <Label Content="3D CAD 파일"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="CadFileBox" IsReadOnly="True"/>
+                                        <Button Grid.Column="1" Content="CAD 선택" Click="BrowseCad_Click"
+                                                Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"/>
+                                    </Grid>
+                                    <Button Content="3D 미리보기 · 유동 방향 확인"
+                                            Click="PreviewCad_Click" Margin="0,8,0,0"/>
+
+                                    <Label Content="케이스 · 솔버 결과 저장 루트" Margin="0,12,0,0"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="OutputRootBox"/>
+                                        <Button Grid.Column="1" Content="폴더 선택" Click="BrowseOutputRoot_Click"
+                                                Margin="8,0,0,0"/>
+                                    </Grid>
+                                    <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="10" Margin="0,5,0,0"
+                                               Text="예: D:\CFD-Results — OpenFOAM의 0, constant, system, 시간 폴더가 모두 여기에 생성됩니다."/>
+
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="150"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,8,0">
+                                            <Label Content="프로젝트 이름"/>
+                                            <TextBox x:Name="CadProjectNameBox" Text="NewCfdProject"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <Label Content="CAD 원본 단위"/>
+                                            <ComboBox x:Name="CadUnitCombo" SelectedIndex="0" Foreground="#07111B">
+                                                <ComboBoxItem><TextBlock Text="mm" Foreground="#07111B"/></ComboBoxItem>
+                                                <ComboBoxItem><TextBlock Text="m" Foreground="#07111B"/></ComboBoxItem>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="유동 모델" Style="{StaticResource SectionTitle}"/>
+                                    <Grid Margin="0,14,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,8,0">
+                                            <Label Content="유동 영역"/>
+                                            <ComboBox x:Name="AnalysisTypeCombo" SelectedIndex="0" Foreground="#07111B"
+                                                      SelectionChanged="AnalysisTypeCombo_SelectionChanged">
+                                                <ComboBoxItem><TextBlock Text="외부유동 · 물체 주위" Foreground="#07111B"/></ComboBoxItem>
+                                                <ComboBoxItem><TextBlock Text="내부유동 · 닫힌 유체 체적" Foreground="#07111B"/></ComboBoxItem>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <Label Content="주 유동 방향"/>
+                                            <ComboBox x:Name="FlowAxisCombo" SelectedIndex="0" Foreground="#07111B"
+                                                      SelectionChanged="FlowAxisCombo_SelectionChanged">
+                                                <ComboBoxItem><TextBlock Text="+X" Foreground="#07111B"/></ComboBoxItem>
+                                                <ComboBoxItem><TextBlock Text="-X" Foreground="#07111B"/></ComboBoxItem>
+                                                <ComboBoxItem><TextBlock Text="+Y" Foreground="#07111B"/></ComboBoxItem>
+                                                <ComboBoxItem><TextBlock Text="-Y" Foreground="#07111B"/></ComboBoxItem>
+                                                <ComboBoxItem><TextBlock Text="+Z" Foreground="#07111B"/></ComboBoxItem>
+                                                <ComboBoxItem><TextBlock Text="-Z" Foreground="#07111B"/></ComboBoxItem>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,8,0">
+                                            <Label Content="입구 속도 (m/s)"/>
+                                            <TextBox x:Name="VelocityBox" Text="10"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <Label Content="동점성계수 ν (m²/s)"/>
+                                            <TextBox x:Name="NuBox" Text="1.5e-5"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,8,0">
+                                            <Label Content="유동 모델"/>
+                                            <ComboBox x:Name="TurbulenceCombo" SelectedIndex="0" Foreground="#07111B"
+                                                      SelectionChanged="TurbulenceCombo_SelectionChanged">
+                                                <ComboBoxItem><TextBlock Text="RANS k-ω SST" Foreground="#07111B"/></ComboBoxItem>
+                                                <ComboBoxItem><TextBlock Text="층류" Foreground="#07111B"/></ComboBoxItem>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <Label Content="난류 강도 (%)"/>
+                                            <TextBox x:Name="IntensityBox" Text="5"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Label Content="난류 길이 척도 (m)" Margin="0,10,0,0"/>
+                                    <TextBox x:Name="TurbLengthScaleBox" Text="0.07"/>
+
+                                    <StackPanel x:Name="FluidPointPanel" Visibility="Collapsed" Margin="0,12,0,0">
+                                        <Label Content="내부 유체점 (m, x y z)"/>
+                                        <TextBox x:Name="FluidPointBox" Text="0 0 0"/>
+                                        <TextBlock Foreground="{StaticResource WarningBrush}" FontSize="10" Margin="0,5,0,0"
+                                                   TextWrapping="Wrap"
+                                                   Text="STEP은 유체가 차지하는 닫힌 체적이어야 합니다. 선택 축의 최소·최대 끝 평면을 inlet/outlet으로 자동 분리하므로 생성 후 경계 패치를 확인하세요."/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,0,0,0">
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="표면 · 메시" Style="{StaticResource SectionTitle}"/>
+                                    <TextBlock Margin="0,4,0,14" Foreground="{StaticResource MutedBrush}"
+                                               TextWrapping="Wrap"
+                                               Text="CAD 허용 크기는 Gmsh/OpenCASCADE 삼각화, 나머지는 원본 OpenFOAM snappyHexMesh 설정입니다."/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,7,0">
+                                            <Label Content="CAD 표면 요소 크기 (CAD 단위)"/>
+                                            <TextBox x:Name="CadSurfaceSizeBox" Text="5"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <Label Content="배경 셀 크기 (m)"/>
+                                            <TextBox x:Name="BaseCellSizeBox" Text="0.1"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,5,0">
+                                            <Label Content="표면 최소 레벨"/>
+                                            <TextBox x:Name="SurfaceMinBox" Text="2"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="3,0">
+                                            <Label Content="표면 최대 레벨"/>
+                                            <TextBox x:Name="SurfaceMaxBox" Text="3"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Margin="5,0,0,0">
+                                            <Label Content="특징선 레벨"/>
+                                            <TextBox x:Name="FeatureLevelBox" Text="3"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,7,0">
+                                            <Label Content="경계층 수"/>
+                                            <TextBox x:Name="LayerCountBox" Text="3"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <Label Content="층 팽창률"/>
+                                            <TextBox x:Name="LayerExpansionBox" Text="1.2"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,7,0">
+                                            <Label Content="최종 층 상대 두께"/>
+                                            <TextBox x:Name="FinalLayerThicknessBox" Text="0.3"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <Label Content="최대 전체 셀 수"/>
+                                            <TextBox x:Name="MaxGlobalCellsBox" Text="4000000"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="외부 계산영역 여유" FontSize="17" FontWeight="SemiBold"/>
+                                    <TextBlock Margin="0,4,0,12" Foreground="{StaticResource MutedBrush}" FontSize="11"
+                                               TextWrapping="Wrap" Text="CAD 최대 길이 L에 대한 배수입니다."/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,5,0">
+                                            <Label Content="상류 (L)"/>
+                                            <TextBox x:Name="UpstreamBox" Text="3"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="3,0">
+                                            <Label Content="하류 (L)"/>
+                                            <TextBox x:Name="DownstreamBox" Text="8"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Margin="5,0,0,0">
+                                            <Label Content="측면 (L)"/>
+                                            <TextBox x:Name="SideLengthsBox" Text="4"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="계산 제어" Style="{StaticResource SectionTitle}"/>
+                                    <Grid Margin="0,14,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,7,0">
+                                            <Label Content="최대 반복"/>
+                                            <TextBox x:Name="EndTimeBox" Text="1000"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <Label Content="결과 저장 간격"/>
+                                            <TextBox x:Name="WriteIntervalBox" Text="100"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Margin="0,12,0,0" Foreground="{StaticResource MutedBrush}"
+                                               TextWrapping="Wrap" LineHeight="19"
+                                               Text="정상 비압축성 incompressibleFluid 솔버를 사용합니다. 항력·마찰·벽면량은 ‘결과 변수’ 탭에서 선택하고, 모든 사전은 ‘사전 편집’ 탭에서 직접 조정할 수 있습니다."/>
+                                    <Button Content="결과 변수 상세 설정" Click="OpenResultSettings_Click" Margin="0,12,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="생성 · 실행" FontSize="17" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="CadStatusText" Margin="0,5,0,14"
+                                               Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                               Text="CAD와 저장 위치를 선택하세요."/>
+
+                                    <Button Content="① 케이스만 생성" Click="GenerateCadCase_Click"
+                                            Style="{StaticResource PrimaryButton}" Margin="0,0,0,8"/>
+                                    <Button Content="② 생성 후 메시까지 실행" Click="GenerateAndMesh_Click"
+                                            Margin="0,0,0,8"/>
+                                    <Button Content="③ 생성 · 메시 · 솔버 전체 실행" Click="GenerateMeshAndSolve_Click"
+                                            Margin="0,0,0,8"/>
+                                    <Button Content="결과 폴더 열기" Click="OpenResultFolder_Click"
+                                            Margin="0,0,0,8"/>
+                                    <Button Content="현재 결과를 ParaView로 열기" Click="OpenParaView_Click"/>
+
+                                    <Border Background="{StaticResource InsetBrush}" BorderBrush="#273548" BorderThickness="1"
+                                            CornerRadius="10" Padding="13" Margin="0,14,0,0">
+                                        <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"
+                                                   LineHeight="19"
+                                                   Text="실행 순서: CAD 변환 → surfaceCheck → blockMesh → surfaceFeatures → snappyHexMesh → 내부유동 패치 분리 → checkMesh → foamRun. 어느 단계도 대체 수학 엔진으로 계산하지 않습니다."/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem x:Name="PorousMediaTab" Header="02  Porous Media">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="0,14,0,0">
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="TreeShield CFD 연구 표준" Style="{StaticResource PageTitle}"/>
+                                    <TextBlock x:Name="PorousPresetStatusText" Margin="0,5,16,0"
+                                               Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                               Text="기본 재료와 순서만 정의되어 있습니다. 두께와 투과도는 실제 값 입력 전까지 비어 있으며 계산을 시작할 수 없습니다."/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="설정 불러오기" Click="LoadPorousPreset_Click"
+                                        Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Content="현재 설정 저장" Click="SavePorousPreset_Click"
+                                        Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                <UniformGrid Grid.Row="1" Grid.ColumnSpan="3" Columns="3" Margin="0,16,0,0">
+                                    <Button x:Name="ScenarioAButton" Content="A · 강우 20 mm/hr" Click="ApplyScenarioA_Click"
+                                            Margin="0,0,6,0"/>
+                                    <Button x:Name="ScenarioBButton" Content="B · 수두 50 mm" Click="ApplyScenarioB_Click" Margin="6,0"/>
+                                    <Button x:Name="GravityStudyButton" Content="보조 · 중력 배수" Click="ApplyGravityStudy_Click" Margin="6,0,0,0"/>
+                                </UniformGrid>
+                                <Grid Grid.Row="2" Grid.ColumnSpan="3" Margin="0,14,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="390"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="템플릿 / 고급" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="PorousBuiltInPresetCombo"
+                                              Style="{StaticResource ReadableValueComboBox}"
+                                              ItemsSource="{Binding PorousBuiltInPresets}" SelectedIndex="0"/>
+                                    <Button Grid.Column="2" Content="선택 프리셋 적용" Click="ApplyBuiltInPorousPreset_Click"
+                                            Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"/>
+                                    <TextBlock Grid.Column="3" x:Name="PorousBuiltInPresetDescription" Margin="12,0,0,0"
+                                               Foreground="{StaticResource WarningBrush}" VerticalAlignment="Center"
+                                               TextWrapping="Wrap" Text="연구 표준 A/B는 같은 7층 필터를 사용하며 경계조건과 해석 시간 방식만 분리됩니다."/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="0.82*"/>
+                                <ColumnDefinition Width="1.18*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,7,12">
+                                <StackPanel>
+                                    <TextBlock Text="Filter cross-section preview" Style="{StaticResource SectionTitle}"/>
+                                    <TextBlock Foreground="{StaticResource MutedBrush}" Margin="0,4,0,12" TextWrapping="Wrap"
+                                               Text="위에서 아래로 유동합니다. 모든 두께가 입력되기 전에는 Thin/Thick 분류만 시각적 비율에 사용하며 계산 물성에는 사용하지 않습니다."/>
+                                    <controls:PorousFilterPreview x:Name="PorousPreview" Height="390"/>
+                                </StackPanel>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Margin="7,0,0,0">
+                                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="Case · Geometry" Style="{StaticResource SectionTitle}"/>
+                                        <Grid Margin="0,13,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <Label Content="케이스 · 솔버 결과 저장 루트"/>
+                                                <TextBox x:Name="PorousOutputRootBox"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="폴더 선택" Click="BrowsePorousOutputRoot_Click"
+                                                    Margin="8,22,0,0" VerticalAlignment="Top"/>
+                                        </Grid>
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,7,0">
+                                                <Label Content="프로젝트 이름"/>
+                                                <TextBox x:Name="PorousProjectNameBox" Text="TreeShieldPorous"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="7,0">
+                                                <Label Content="Domain Width [mm]"/>
+                                                <TextBox x:Name="PorousWidthBox" Text="80" TextChanged="PorousInput_TextChanged"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Margin="7,0,0,0">
+                                                <Label Content="Total Thickness"/>
+                                                <TextBox x:Name="PorousTotalThicknessBox" Text="INPUT REQUIRED" IsReadOnly="True"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="Fluid · Gravity · Boundary Conditions" Style="{StaticResource SectionTitle}"/>
+                                        <Grid Margin="0,13,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,7,0">
+                                                <Label Content="Fluid"/>
+                                                <TextBox Text="Water" IsReadOnly="True"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="7,0">
+                                                <Label Content="Density ρ [kg/m³]"/>
+                                                <TextBox x:Name="PorousDensityBox" Text="998.2"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Margin="7,0,0,0">
+                                                <Label Content="Dynamic viscosity μ [Pa·s]"/>
+                                                <TextBox x:Name="PorousViscosityBox" Text="1.003e-3"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,7,0">
+                                                <CheckBox x:Name="PorousGravityCheck" Content="Gravity enabled" IsChecked="True"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="7,0"><Label Content="gx [m/s²]"/><TextBox x:Name="PorousGxBox" Text="0"/></StackPanel>
+                                            <StackPanel Grid.Column="2" Margin="7,0"><Label Content="gy [m/s²]"/><TextBox x:Name="PorousGyBox" Text="-9.81"/></StackPanel>
+                                            <StackPanel Grid.Column="3" Margin="7,0,0,0"><Label Content="gz [m/s²]"/><TextBox x:Name="PorousGzBox" Text="0"/></StackPanel>
+                                        </Grid>
+                                        <StackPanel Margin="0,12,0,0">
+                                            <Label Content="Flow Mode"/>
+                                            <ComboBox x:Name="PorousFlowModeCombo" Visibility="Collapsed"
+                                                      ItemsSource="{Binding PorousFlowModes}" SelectedIndex="0"/>
+                                            <UniformGrid Columns="3">
+                                                <RadioButton x:Name="PorousRainfallModeRadio"
+                                                             GroupName="PorousFlowMode" Tag="RainfallFlux"
+                                                             Content="Rainfall Flux · 강우 유량"
+                                                             Style="{StaticResource FlowModeRadioButton}"
+                                                             IsChecked="True" Checked="PorousFlowMode_Checked"/>
+                                                <RadioButton x:Name="PorousGravityDrainageModeRadio"
+                                                             GroupName="PorousFlowMode" Tag="GravityDrainage"
+                                                             Content="Gravity Drainage · 중력 배수"
+                                                             Style="{StaticResource FlowModeRadioButton}"
+                                                             Checked="PorousFlowMode_Checked"/>
+                                                <RadioButton x:Name="PorousWaterHeadModeRadio"
+                                                             GroupName="PorousFlowMode" Tag="WaterHead"
+                                                             Content="Water Head · 담수 수두"
+                                                             Style="{StaticResource FlowModeRadioButton}"
+                                                             Margin="0" Checked="PorousFlowMode_Checked"/>
+                                            </UniformGrid>
+                                        </StackPanel>
+                                        <Grid Margin="0,12,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,7,0">
+                                                <Label Content="Rainfall [mm/hr]"/>
+                                                <TextBox x:Name="PorousRainfallBox" Text="20"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="7,0">
+                                                <Label Content="Water Head [mm]"/>
+                                                <TextBox x:Name="PorousWaterHeadBox" Text="50"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Margin="7,0,0,0">
+                                                <Label Content="Simulation Type"/>
+                                                <ComboBox x:Name="PorousSimulationCombo" Style="{StaticResource ReadableValueComboBox}" ItemsSource="{Binding PorousSimulationTypes}" SelectedIndex="0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Border Background="#111923" BorderBrush="#2D3D50" BorderThickness="1"
+                                                CornerRadius="10" Padding="12,10" Margin="0,10,0,0">
+                                            <TextBlock x:Name="PorousFlowModeDescription" Foreground="#C8D4E1" TextWrapping="Wrap"
+                                                       Text="Rainfall Flux · 상단에서 -Y 방향 속도를 강제하고 하단 압력을 0으로 둡니다."/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="Mesh · Solver" Style="{StaticResource SectionTitle}"/>
+                                        <Grid Margin="0,13,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,7,0"><Label Content="Mesh preset"/><ComboBox x:Name="PorousMeshPresetCombo" Style="{StaticResource ReadableValueComboBox}" ItemsSource="{Binding PorousMeshPresets}" SelectedIndex="1" SelectionChanged="PorousMeshPreset_SelectionChanged"/></StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="7,0"><Label Content="Target cell size Y [mm]"/><TextBox x:Name="PorousCellSizeBox" Text="0.25"/></StackPanel>
+                                            <StackPanel Grid.Column="2" Margin="7,0"><Label Content="Minimum cells/layer"/><TextBox x:Name="PorousMinCellsBox" Text="4"/></StackPanel>
+                                            <StackPanel Grid.Column="3" Margin="7,0,0,0"><Label Content="Flow regime"/><TextBox Text="Laminar" IsReadOnly="True"/></StackPanel>
+                                        </Grid>
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,7,0"><Label Content="End time / iterations"/><TextBox x:Name="PorousEndTimeBox" Text="400"/></StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="7,0"><Label Content="Write interval"/><TextBox x:Name="PorousWriteIntervalBox" Text="40"/></StackPanel>
+                                            <StackPanel Grid.Column="2" Margin="7,0,0,0"><Label Content="Δt [s] (Transient)"/><TextBox x:Name="PorousDeltaTBox" Text="0.001"/></StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Layers · Material Parameters" Style="{StaticResource SectionTitle}"/>
+                                        <TextBlock Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                                   Text="k [m²], 1/k [m⁻²], pore size, particle size, porosity는 서로 다른 값입니다. 빈 셀에 기존 필터 값을 자동 적용하지 않습니다."/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button Content="추가" Click="AddPorousLayer_Click" Margin="6,0,0,0"/>
+                                        <Button Content="삭제" Click="RemovePorousLayer_Click" Margin="6,0,0,0"/>
+                                        <Button Content="위" Click="MovePorousLayerUp_Click" Margin="6,0,0,0"/>
+                                        <Button Content="아래" Click="MovePorousLayerDown_Click" Margin="6,0,0,0"/>
+                                        <Button Content="7층 초기화" Click="ResetPorousPreset_Click" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                                <DataGrid x:Name="PorousLayerGrid" ItemsSource="{Binding PorousLayers}" AutoGenerateColumns="False"
+                                          Margin="0,14,0,0" MinHeight="300" CanUserAddRows="False" HeadersVisibility="Column"
+                                          Background="#101720" Foreground="#F3F6FA" RowBackground="#151F2B"
+                                          AlternatingRowBackground="#192532" BorderBrush="#304054" GridLinesVisibility="Horizontal"
+                                          SelectionChanged="PorousLayerGrid_SelectionChanged" CellEditEnding="PorousLayerGrid_CellEditEnding">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="#" Binding="{Binding Id}" IsReadOnly="True" Width="38"/>
+                                        <DataGridTextColumn Header="설계층" Binding="{Binding DesignGroup, UpdateSourceTrigger=PropertyChanged}" Width="58"/>
+                                        <DataGridTextColumn Header="Zone" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="155"/>
+                                        <DataGridTextColumn Header="Material (EN)" Binding="{Binding DisplayNameEn, UpdateSourceTrigger=PropertyChanged}" Width="190"/>
+                                        <DataGridTextColumn Header="한글" Binding="{Binding DisplayNameKo, UpdateSourceTrigger=PropertyChanged}" Width="150"/>
+                                        <DataGridTextColumn Header="Layer type" Binding="{Binding MaterialType, UpdateSourceTrigger=PropertyChanged}" Width="160"/>
+                                        <DataGridTextColumn Header="Thickness [mm]" Binding="{Binding Thickness, UpdateSourceTrigger=PropertyChanged}" Width="120"/>
+                                        <DataGridTemplateColumn Header="Permeability type" Width="130">
+                                            <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding PermeabilityType}" Padding="5"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                                            <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><ComboBox Style="{StaticResource ReadableValueComboBox}" ItemsSource="{Binding DataContext.PorousPermeabilityTypes, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding PermeabilityType, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="k [m²]" Binding="{Binding Permeability, UpdateSourceTrigger=PropertyChanged}" Width="110"/>
+                                        <DataGridTextColumn Header="1/k [m⁻²]" Binding="{Binding DarcyResistance, StringFormat=G6}" IsReadOnly="True" Width="110"/>
+                                        <DataGridTextColumn Header="Porosity [-]" Binding="{Binding Porosity, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
+                                        <DataGridTextColumn Header="Pore min [µm]" Binding="{Binding PoreSizeMin, UpdateSourceTrigger=PropertyChanged}" Width="105"/>
+                                        <DataGridTextColumn Header="Pore max [µm]" Binding="{Binding PoreSizeMax, UpdateSourceTrigger=PropertyChanged}" Width="105"/>
+                                        <DataGridTemplateColumn Header="Source" Width="110">
+                                            <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ParameterSource}" Padding="5"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                                            <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><ComboBox Style="{StaticResource ReadableValueComboBox}" ItemsSource="{Binding DataContext.PorousParameterSources, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding ParameterSource, UpdateSourceTrigger=PropertyChanged}"/></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="State" Binding="{Binding InputState}" IsReadOnly="True" Width="115"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <Border Background="{StaticResource InsetBrush}" BorderBrush="#2B394A" BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,12,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="선택 층 상세 · Anisotropic / Forchheimer / Pore / Particle / Source" FontWeight="SemiBold"/>
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,6,0"><Label Content="Kx [m²]"/><TextBox Text="{Binding SelectedItem.PermeabilityX, ElementName=PorousLayerGrid, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="6,0"><Label Content="Ky [m²]"/><TextBox Text="{Binding SelectedItem.PermeabilityY, ElementName=PorousLayerGrid, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                                            <StackPanel Grid.Column="2" Margin="6,0"><Label Content="Kz [m²]"/><TextBox Text="{Binding SelectedItem.PermeabilityZ, ElementName=PorousLayerGrid, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                                            <StackPanel Grid.Column="3" Margin="6,0"><Label Content="Forchheimer f [m⁻¹]"/><TextBox Text="{Binding SelectedItem.ForchheimerCoefficient, ElementName=PorousLayerGrid, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                                            <StackPanel Grid.Column="4" Margin="6,0,0,0"><Label Content="Particle size [µm]"/><TextBox Text="{Binding SelectedItem.ParticleSize, ElementName=PorousLayerGrid, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                                        </Grid>
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,6,0"><Label Content="Pore size min [µm]"/><TextBox Text="{Binding SelectedItem.PoreSizeMin, ElementName=PorousLayerGrid, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="6,0"><Label Content="Pore size max [µm]"/><TextBox Text="{Binding SelectedItem.PoreSizeMax, ElementName=PorousLayerGrid, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                                            <TextBlock Grid.Column="2" Margin="12,22,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                                       Text="Pore size는 k [m²] 또는 particle size와 서로 다른 입력입니다."/>
+                                        </Grid>
+                                        <Label Content="Source / DOI / Reference" Margin="0,10,0,0"/>
+                                        <TextBox Text="{Binding SelectedItem.ParameterSourceReference, ElementName=PorousLayerGrid, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="1.1*"/><ColumnDefinition Width="0.9*"/></Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,7,12">
+                                <StackPanel>
+                                    <TextBlock Text="Validation · Analytical Darcy" Style="{StaticResource SectionTitle}"/>
+                                    <TextBox x:Name="PorousValidationBox" Margin="0,12,0,0" Height="180" IsReadOnly="True"
+                                             VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"
+                                             Text="두께와 투과도를 입력한 뒤 Validate를 누르세요."/>
+                                    <TextBlock x:Name="PorousAnalyticalText" Margin="0,12,0,0" TextWrapping="Wrap" LineHeight="20"
+                                               Foreground="{StaticResource SecondaryAccentBrush}" Text="Analytical Darcy: INPUT REQUIRED"/>
+                                    <WrapPanel Margin="0,14,0,0">
+                                        <Button Content="Validate" Click="ValidatePorous_Click" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"/>
+                                        <Button Content="① Case 생성" Click="GeneratePorousCase_Click" Margin="0,0,8,8"/>
+                                        <Button Content="② Mesh 생성 · 검사" Click="MeshPorousCase_Click" Margin="0,0,8,8"/>
+                                        <Button Content="③ 전체 CFD 실행" Click="RunPorousCase_Click" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"/>
+                                        <Button Content="결과 불러오기" Click="LoadPorousResults_Click" Margin="0,0,8,8"/>
+                                        <Button Content="ParaView" Click="OpenPorousParaView_Click" Margin="0,0,8,8"/>
+                                        <Button Content="CFD Report" Click="GeneratePorousReport_Click" Margin="0,0,8,8"/>
+                                    </WrapPanel>
+                                    <TextBlock x:Name="PorousRunStatusText" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                               Text="대기 · 단계별 오류는 CASE GENERATION / BLOCKMESH / CELL ZONE / CHECKMESH / SOLVER / POSTPROCESS로 표시됩니다."/>
+                                </StackPanel>
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="7,0,0,0">
+                                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="Results" Style="{StaticResource SectionTitle}"/>
+                                    <TextBlock x:Name="PorousResultsText" Margin="0,10,0,0" TextWrapping="Wrap" LineHeight="20"
+                                               Text="아직 불러온 CFD 결과가 없습니다."/>
+                                    <Border Background="#111923" BorderBrush="#2D3D50" BorderThickness="1"
+                                            CornerRadius="10" Padding="12,10" Margin="0,12,0,0">
+                                        <TextBlock Foreground="#C8D4E1" TextWrapping="Wrap" LineHeight="19"
+                                                   Text="ParaView: Apply 후 Color By → layerId(층 번호), permeability(입력 물성), U → Magnitude, p를 선택하세요. layerId와 permeability는 계산 결과가 아닌 visualization-only 입력장입니다."/>
+                                    </Border>
+                                    </StackPanel>
+                                </Border>
+                                <Expander Header="고급 도구 · Parameter Sweep" IsExpanded="False" Margin="0,0,0,12">
+                                  <Border Style="{StaticResource Card}" Margin="0,8,0,0">
+                                    <StackPanel>
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,6,0"><Label Content="Start k [m²]"/><TextBox x:Name="SweepStartBox" Text="1e-13"/></StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="6,0"><Label Content="End k [m²]"/><TextBox x:Name="SweepEndBox" Text="1e-10"/></StackPanel>
+                                            <StackPanel Grid.Column="2" Margin="6,0,0,0"><Label Content="Steps"/><TextBox x:Name="SweepStepsBox" Text="10"/></StackPanel>
+                                        </Grid>
+                                        <CheckBox x:Name="SweepRunSolverCheck" Content="각 case에서 mesh·solver까지 직렬 실행" IsChecked="False"/>
+                                        <Button Content="선택 층 Sweep 실행" Click="RunPorousSweep_Click" Margin="0,8,0,0"/>
+                                    </StackPanel>
+                                  </Border>
+                                </Expander>
+                                <Expander Header="고급 도구 · Kozeny–Carman (Estimated only)" IsExpanded="False" Margin="0,0,0,12">
+                                  <Border Style="{StaticResource Card}" Margin="0,8,0,0">
+                                    <StackPanel>
+                                        <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,6,0"><Label Content="Particle diameter [µm]"/><TextBox x:Name="KcParticleBox"/></StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="6,0,0,0"><Label Content="Porosity [-]"/><TextBox x:Name="KcPorosityBox"/></StackPanel>
+                                        </Grid>
+                                        <Button Content="Estimated permeability 계산" Click="CalculateKozenyCarman_Click" Margin="0,10,0,0"/>
+                                        <TextBlock x:Name="KcResultText" Foreground="{StaticResource WarningBrush}" Margin="0,9,0,0" TextWrapping="Wrap"
+                                                   Text="섬유층에는 자동 적용하지 않으며 모델 적합성을 별도로 검토해야 합니다."/>
+                                    </StackPanel>
+                                  </Border>
+                                </Expander>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem x:Name="ResultSettingsTab" Header="03  결과 변수">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.05*"/>
+                            <ColumnDefinition Width="0.95*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="0,0,7,0">
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="힘 · 저항 계수" FontSize="18" FontWeight="SemiBold"/>
+                                    <TextBlock Margin="0,5,0,14" Foreground="{StaticResource MutedBrush}"
+                                               TextWrapping="Wrap" LineHeight="19"
+                                               Text="OpenFOAM forces/forceCoeffs가 벽면 압력력과 점성력(마찰저항), 모멘트, Cd·Cl·Cm을 직접 적분합니다."/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox x:Name="ForcesCheck" IsChecked="True"
+                                                  Content="힘·모멘트 (압력/점성 분리)"/>
+                                        <CheckBox Grid.Column="1" x:Name="ForceCoeffsCheck" IsChecked="True"
+                                                  Content="항력·양력·모멘트 계수"/>
+                                    </Grid>
+
+                                    <Label Content="힘 적분 벽 패치 (여러 개는 공백 구분)" Margin="0,12,0,0"/>
+                                    <TextBox x:Name="ForcePatchesBox" Text="model.*" FontFamily="Cascadia Mono, Consolas"/>
+
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,6,0">
+                                            <Label Content="밀도 ρ (kg/m³)"/>
+                                            <TextBox x:Name="DensityBox" Text="1.225"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="3,0">
+                                            <Label Content="기준 면적 Aref (m²)"/>
+                                            <TextBox x:Name="ReferenceAreaBox" Text="1"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Margin="6,0,0,0">
+                                            <Label Content="기준 길이 lRef (m)"/>
+                                            <TextBox x:Name="ReferenceLengthBox" Text="1"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,7,0">
+                                            <Label Content="항력 방향 dragDir"/>
+                                            <TextBox x:Name="DragDirectionBox" Text="1 0 0" FontFamily="Consolas"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <Label Content="양력 방향 liftDir"/>
+                                            <TextBox x:Name="LiftDirectionBox" Text="0 0 1" FontFamily="Consolas"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,7,0">
+                                            <Label Content="피치 축 pitchAxis"/>
+                                            <TextBox x:Name="PitchAxisBox" Text="0 1 0" FontFamily="Consolas"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <Label Content="회전 중심 CofR (m)"/>
+                                            <TextBox x:Name="CentreOfRotationBox" Text="0 0 0" FontFamily="Consolas"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="저장 위치" FontSize="17" FontWeight="SemiBold"/>
+                                    <TextBlock Margin="0,7,0,0" Foreground="{StaticResource MutedBrush}"
+                                               TextWrapping="Wrap" LineHeight="20"
+                                               Text="힘·계수 이력은 case/postProcessing 아래에, Q·와도·y+·벽면 전단응력 같은 장은 OpenFOAM 시간 폴더에 기록되어 ParaView에서 바로 선택할 수 있습니다."/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="7,0,0,0">
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="수렴 · 벽면 · 파생장" FontSize="18" FontWeight="SemiBold"/>
+                                    <TextBlock Margin="0,5,0,12" Foreground="{StaticResource MutedBrush}"
+                                               Text="필요한 OpenFOAM functionObject만 선택합니다."/>
+                                    <UniformGrid Columns="2">
+                                        <CheckBox x:Name="ResidualsCheck" IsChecked="True" Content="잔차 U, p, k, ω"/>
+                                        <CheckBox x:Name="WallShearStressCheck" IsChecked="True" Content="벽면 전단응력"/>
+                                        <CheckBox x:Name="YPlusCheck" IsChecked="True" Content="난류 y+"/>
+                                        <CheckBox x:Name="QCriterionCheck" IsChecked="True" Content="Q criterion"/>
+                                        <CheckBox x:Name="VorticityCheck" IsChecked="True" Content="와도 vorticity"/>
+                                        <CheckBox x:Name="TurbulenceIntensityCheck" Content="난류 강도장"/>
+                                        <CheckBox x:Name="FieldAverageCheck" Content="시간 평균·변동장"/>
+                                    </UniformGrid>
+                                    <Label Content="시간평균 대상 필드" Margin="0,12,0,0"/>
+                                    <TextBox x:Name="AveragedFieldsBox" Text="U p" FontFamily="Cascadia Mono, Consolas"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="사용자 functionObject" FontSize="18" FontWeight="SemiBold"/>
+                                    <TextBlock Margin="0,5,0,12" Foreground="{StaticResource MutedBrush}"
+                                               TextWrapping="Wrap" LineHeight="19"
+                                               Text="OpenFOAM 사전 블록을 입력하면 해석하거나 축약하지 않고 system/FoamWorkbenchFunctions에 그대로 포함합니다. 엔진 기능 탭에서 현재 설치본의 전체 목록을 볼 수 있습니다."/>
+                                    <TextBox x:Name="CustomFunctionObjectsBox" MinHeight="210"
+                                             FontFamily="Cascadia Mono, Consolas" FontSize="12"
+                                             AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
+                                             HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                             SpellCheck.IsEnabled="False"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="04  엔진 기능">
+                <Grid Margin="0,14,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.9*"/>
+                        <ColumnDefinition Width="1.35*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,7,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="OpenFOAM 런타임 카탈로그" FontSize="18" FontWeight="SemiBold"/>
+                                <TextBlock Margin="0,5,0,14" Foreground="{StaticResource MutedBrush}"
+                                           TextWrapping="Wrap" LineHeight="19"
+                                           Text="현재 연결된 엔진의 런타임 선택 테이블을 직접 조회합니다. 추가 라이브러리가 설치되면 목록에도 자동 반영됩니다."/>
+                            </StackPanel>
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox x:Name="CatalogCategoryCombo" SelectedIndex="1" SelectedValuePath="Tag">
+                                    <ComboBoxItem Tag="-solvers">솔버 모듈</ComboBoxItem>
+                                    <ComboBoxItem Tag="-functionObjects">functionObjects</ComboBoxItem>
+                                    <ComboBoxItem Tag="-scalarBCs">스칼라 경계조건</ComboBoxItem>
+                                    <ComboBoxItem Tag="-vectorBCs">벡터 경계조건</ComboBoxItem>
+                                    <ComboBoxItem Tag="-fvModels">fvModels</ComboBoxItem>
+                                    <ComboBoxItem Tag="-fvConstraints">fvConstraints</ComboBoxItem>
+                                    <ComboBoxItem Tag="-tables">런타임 테이블 종류</ComboBoxItem>
+                                    <ComboBoxItem Tag="-switches">디버그·정보·최적화 스위치</ComboBoxItem>
+                                    <ComboBoxItem Tag="-all">전체 런타임 선택 항목</ComboBoxItem>
+                                </ComboBox>
+                                <Button Grid.Column="1" Content="엔진에서 조회" Click="LoadRuntimeCatalog_Click"
+                                        Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"/>
+                            </Grid>
+                            <TextBox Grid.Row="2" x:Name="CatalogSearchBox" Margin="0,10,0,10"
+                                     TextChanged="CatalogSearchBox_TextChanged"
+                                     ToolTip="이름 또는 라이브러리 검색"/>
+                            <ListBox Grid.Row="3" x:Name="RuntimeCatalogList"
+                                     ItemsSource="{Binding RuntimeCatalogItems}"
+                                     Background="{StaticResource InsetBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                     BorderThickness="1" Padding="4" FontFamily="Cascadia Mono, Consolas"
+                                     ItemContainerStyle="{StaticResource CatalogListItem}"
+                                     SelectionChanged="RuntimeCatalogList_SelectionChanged"/>
+                            <TextBlock Grid.Row="4" x:Name="CatalogStatusText" Margin="0,10,0,0"
+                                       Foreground="{StaticResource MutedBrush}" Text="엔진에서 목록을 조회하세요."/>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Margin="7,0,0,0" Padding="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="58"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid Margin="16,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="CatalogSelectionText" Text="항목을 선택하세요" FontWeight="SemiBold"/>
+                                    <TextBlock Text="foamInfo의 설명·소스·예제 위치" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="정보·예제 조회" Click="LookupRuntimeInfo_Click"
+                                        VerticalAlignment="Center" Padding="11,6"/>
+                            </Grid>
+                            <TextBox Grid.Row="1" x:Name="RuntimeInfoBox" IsReadOnly="True"
+                                     FontFamily="Cascadia Mono, Consolas" FontSize="12"
+                                     AcceptsReturn="True" TextWrapping="NoWrap" BorderThickness="0"
+                                     HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                     Background="#090E15" Foreground="#E4EBF3" Padding="16"/>
+                            <Border Grid.Row="2" Background="{StaticResource InsetBrush}" Padding="14" CornerRadius="0,0,12,12">
+                                <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                           Text="선택 항목은 사전 편집기에서 직접 구성하거나, 결과 변수 탭의 사용자 functionObject에 원문으로 추가할 수 있습니다. UI는 입력을 제한하지 않습니다."/>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="05  런타임">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,8,0">
+                            <StackPanel>
+                                <TextBlock Text="실행 백엔드" FontSize="17" FontWeight="SemiBold"/>
+                                <TextBlock Margin="0,4,0,18" Foreground="{StaticResource MutedBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="GUI는 계산을 대신하지 않습니다. 아래 런타임의 실제 OpenFOAM 실행 파일을 호출합니다."/>
+
+                                <Label Content="백엔드"/>
+                                <ComboBox x:Name="BackendCombo" SelectedValuePath="Tag"
+                                          SelectionChanged="BackendCombo_SelectionChanged" Margin="0,0,0,12">
+                                    <ComboBox.Resources>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#07111B"/>
+                                        </Style>
+                                    </ComboBox.Resources>
+                                    <ComboBoxItem Tag="Wsl">
+                                        <TextBlock Text="WSL2 (권장 · 로컬 Ubuntu)" Foreground="#07111B"/>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem Tag="Docker">
+                                        <TextBlock Text="Docker (선택 · 컨테이너)" Foreground="#07111B"/>
+                                    </ComboBoxItem>
+                                </ComboBox>
+
+                                <Grid x:Name="WslSettingsPanel">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="1.6*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                        <Label Content="WSL 배포판"/>
+                                        <TextBox x:Name="WslDistributionBox"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <Label Content="OpenFOAM bashrc"/>
+                                        <TextBox x:Name="BashrcBox"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <StackPanel x:Name="DockerSettingsPanel" Visibility="Collapsed">
+                                    <Label Content="Docker 이미지"/>
+                                    <TextBox x:Name="DockerImageBox"/>
+                                </StackPanel>
+
+                                <Label Content="Windows ParaView 실행 파일" Margin="0,14,0,0"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="ParaViewPathBox"/>
+                                    <Button Grid.Column="1" Content="찾기" Click="BrowseParaView_Click" Margin="8,0,0,0"/>
+                                </Grid>
+
+                                <Grid Margin="0,14,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="120"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <Label Content="병렬 프로세스 수"/>
+                                        <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="11"
+                                                   Text="decomposeParDict의 subdomains와 일치해야 합니다."/>
+                                    </StackPanel>
+                                    <TextBox Grid.Column="1" x:Name="ProcessCountBox" VerticalContentAlignment="Center"/>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                                    <Button Content="설정 저장" Click="SaveSettings_Click" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                                    <Button Content="연결 테스트" Click="ProbeRuntime_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="케이스 무결성" FontSize="17" FontWeight="SemiBold"/>
+                                    <TextBlock Margin="0,4,0,16" Foreground="{StaticResource MutedBrush}"
+                                               Text="OpenFOAM 표준 디렉터리와 controlDict를 검사합니다."/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Style="{StaticResource InsetCard}" Margin="0,0,6,0">
+                                            <StackPanel>
+                                                <TextBlock Text="0/" FontFamily="Consolas" FontWeight="Bold"/>
+                                                <TextBlock x:Name="ZeroStatus" Text="—" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column="1" Style="{StaticResource InsetCard}" Margin="3,0">
+                                            <StackPanel>
+                                                <TextBlock Text="constant/" FontFamily="Consolas" FontWeight="Bold"/>
+                                                <TextBlock x:Name="ConstantStatus" Text="—" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column="2" Style="{StaticResource InsetCard}" Margin="6,0,0,0">
+                                            <StackPanel>
+                                                <TextBlock Text="system/" FontFamily="Consolas" FontWeight="Bold"/>
+                                                <TextBlock x:Name="SystemStatus" Text="—" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                    <TextBlock x:Name="CaseValidationText" Margin="0,14,0,0" Foreground="{StaticResource MutedBrush}"
+                                               TextWrapping="Wrap" Text="케이스를 열면 상세 검사가 표시됩니다."/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="계산 보존 원칙" FontSize="17" FontWeight="SemiBold"/>
+                                    <TextBlock Margin="0,10,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                               LineHeight="21"
+                                               Text="• blockMesh, snappyHexMesh, checkMesh를 원본 그대로 실행&#10;• controlDict의 application/solver를 자동 감지&#10;• MPI 병렬 계산과 reconstructPar 지원&#10;• fvSchemes, fvSolution, 난류·열물성 사전을 임의 변경하지 않음&#10;• 모든 고급 사전을 원문 편집기로 완전하게 노출"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="06  실행">
+                <Grid Margin="0,14,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Border Style="{StaticResource Card}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="계산 파이프라인" FontSize="17" FontWeight="SemiBold"/>
+                                    <TextBlock Text="필요한 원본 OpenFOAM 유틸리티만 선택하세요. 순서대로 실행됩니다."
+                                               Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button Content="선택 실행" Click="RunPipeline_Click" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                                    <Button Content="중지" Click="Stop_Click" Style="{StaticResource DangerButton}"/>
+                                </StackPanel>
+                            </Grid>
+                            <ListBox Grid.Row="1" x:Name="PipelineList" ItemsSource="{Binding PipelineSteps}"
+                                     Background="Transparent" BorderThickness="0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{StaticResource InsetBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                                BorderThickness="1" CornerRadius="11" Padding="14" Margin="0,0,0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="34"/>
+                                                    <ColumnDefinition Width="190"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                </Grid.ColumnDefinitions>
+                                                <CheckBox IsChecked="{Binding IsEnabled}" VerticalAlignment="Center"/>
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding Command}" FontFamily="Consolas" FontSize="10"
+                                                               Foreground="{StaticResource AccentBrush}"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Text="{Binding Description}" TextWrapping="Wrap"
+                                                           Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="8,0"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding Status}" HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Border>
+                    <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="사용자 명령" VerticalAlignment="Center" Margin="0,0,12,0" FontWeight="SemiBold"/>
+                            <TextBox Grid.Column="1" x:Name="CustomCommandBox" FontFamily="Consolas"
+                                     Text="postProcess -func &quot;patchIntegrate(p)&quot;"/>
+                            <Button Grid.Column="2" Content="실행" Click="RunCustomCommand_Click" Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="07  사전 편집">
+                <Grid Margin="0,14,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="310"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Style="{StaticResource Card}" Padding="12">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Margin="5,3,5,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="케이스 파일" FontSize="16" FontWeight="SemiBold"/>
+                                <Button Grid.Column="1" Content="새로고침" Click="RefreshFiles_Click" Padding="9,5"/>
+                            </Grid>
+                            <TreeView Grid.Row="1" x:Name="CaseFileTree" Background="Transparent"
+                                      Foreground="{StaticResource TextBrush}"
+                                      SelectedItemChanged="CaseFileTree_SelectedItemChanged"/>
+                        </Grid>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="52"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Margin="16,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock x:Name="EditorFileName" Text="파일을 선택하세요" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="EditorDirtyMark" Text="  ● 수정됨" Foreground="{StaticResource WarningBrush}"
+                                               Visibility="Collapsed"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Content="다시 불러오기" Click="ReloadEditor_Click" Margin="0,0,7,0" Padding="10,6"/>
+                                    <Button Content="저장" Click="SaveEditor_Click" Style="{StaticResource PrimaryButton}" Padding="12,6"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBox Grid.Row="1" x:Name="DictionaryEditor" FontFamily="Cascadia Mono, Consolas"
+                                     FontSize="13" AcceptsReturn="True" AcceptsTab="True"
+                                     HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                     TextChanged="DictionaryEditor_TextChanged" IsEnabled="False"
+                                     BorderThickness="0" Padding="16" TextWrapping="NoWrap"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem x:Name="MonitorTab" Header="08  모니터">
+                <Grid Margin="0,14,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1.15*"/>
+                        <RowDefinition Height="0.85*"/>
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="0.8*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,6,0" Padding="0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="46"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid Margin="14,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="잔차 이력 (Initial residual) · 휠 확대/축소" FontWeight="SemiBold"/>
+                                        <TextBlock x:Name="ResidualLogStatusText" Text="케이스를 열면 최신 로그를 자동 복구합니다."
+                                                   FontSize="10" Foreground="{StaticResource MutedBrush}"
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="410"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button x:Name="PythonResidualPlotButton" Content="Python 상세" Click="GeneratePythonResidualPlot_Click"
+                                                Padding="9,5" Margin="0,0,7,0"/>
+                                        <Button Content="이전 로그 선택" Click="LoadResidualLog_Click" Padding="9,5"/>
+                                        <Button Content="초기화" Click="ClearMonitor_Click" Padding="9,5" Margin="7,0,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                                <controls:ResidualPlot Grid.Row="1" x:Name="ResidualChart" Margin="1"/>
+                            </Grid>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource Card}" Margin="6,0,0,0" Padding="0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="46"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="최근 잔차" FontWeight="SemiBold" VerticalAlignment="Center" Margin="14,0"/>
+                                <DataGrid Grid.Row="1" x:Name="ResidualGrid" ItemsSource="{Binding ResidualSummaries}"
+                                          AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                                          Foreground="#F4F8FC" FontSize="12" RowHeight="32"
+                                          AlternationCount="2" SelectionMode="Single">
+                                    <DataGrid.ColumnHeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="Background" Value="#202A39"/>
+                                            <Setter Property="Foreground" Value="#F4F8FC"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Padding" Value="9,8"/>
+                                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                                            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                        </Style>
+                                    </DataGrid.ColumnHeaderStyle>
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Setter Property="Foreground" Value="#EAF2FA"/>
+                                            <Setter Property="Padding" Value="8,5"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="#36427D"/>
+                                                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.CellStyle>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="변수" Binding="{Binding Field}" Width="*"/>
+                                        <DataGridTextColumn Header="초기 잔차" Binding="{Binding Initial, StringFormat=0.00E+00}" Width="94"/>
+                                        <DataGridTextColumn Header="최종 잔차" Binding="{Binding Final, StringFormat=0.00E+00}" Width="94"/>
+                                        <DataGridTextColumn Header="표본" Binding="{Binding Samples}" Width="58"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                    <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="44"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Margin="14,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="실행 콘솔" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Content="로그 지우기" Click="ClearConsole_Click" Padding="9,5"
+                                        VerticalAlignment="Center"/>
+                            </Grid>
+                            <TextBox Grid.Row="1" x:Name="ConsoleBox" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas"
+                                     FontSize="11" AcceptsReturn="True" TextWrapping="NoWrap" BorderThickness="0"
+                                     HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                     Background="#090E15" Foreground="#D7E0EA"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="3" Background="#0A0F16" BorderBrush="#263548" BorderThickness="0,1,0,0">
+            <Grid Margin="24,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="FooterStatus" Text="준비됨" Foreground="{StaticResource MutedBrush}"
+                           FontSize="10" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="원본 계산 엔진 · 사전 무손실" Foreground="{StaticResource AccentBrush}"
+                           FontSize="10" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,88 @@
+<Window x:Class="FoamWorkbench.CadPreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="CAD 3D 미리보기 · 유동 방향"
+        Icon="Assets/FoamWorkbench.ico"
+        Width="1120" Height="780" MinWidth="820" MinHeight="600"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBrush}"
+        Foreground="{StaticResource TextBrush}"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextHintingMode="Fixed"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+    <Grid Margin="18" Background="{StaticResource WindowBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="CAD 3D 미리보기" FontSize="20" FontWeight="SemiBold"/>
+                <TextBlock x:Name="PreviewInfoText" Margin="0,5,0,0"
+                           Foreground="{StaticResource MutedBrush}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="등각" Click="Isometric_Click" Margin="0,0,6,0"/>
+                <Button Content="+X 보기" Click="ViewX_Click" Margin="0,0,6,0"/>
+                <Button Content="+Y 보기" Click="ViewY_Click" Margin="0,0,6,0"/>
+                <Button Content="+Z 보기" Click="ViewZ_Click" Margin="0,0,10,0"/>
+                <Button Content="닫기" Click="Close_Click" Style="{StaticResource PrimaryButton}"/>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="1" CornerRadius="16" BorderBrush="{StaticResource BorderHighlightBrush}"
+                BorderThickness="1" Background="#080F17" ClipToBounds="True">
+            <Grid>
+                <Viewport3D x:Name="PreviewViewport"
+                            MouseLeftButtonDown="Viewport_MouseLeftButtonDown"
+                            MouseLeftButtonUp="Viewport_MouseLeftButtonUp"
+                            MouseMove="Viewport_MouseMove"
+                            MouseWheel="Viewport_MouseWheel">
+                    <Viewport3D.Camera>
+                        <PerspectiveCamera x:Name="PreviewCamera" FieldOfView="42"/>
+                    </Viewport3D.Camera>
+                </Viewport3D>
+
+                <Border HorizontalAlignment="Left" VerticalAlignment="Top"
+                        Background="#E0121923" CornerRadius="10" Padding="12"
+                        Margin="12" IsHitTestVisible="False">
+                    <StackPanel>
+                        <TextBlock x:Name="FlowDirectionText" FontWeight="SemiBold" Foreground="#42D6B5"/>
+                        <TextBlock Text="청록색 화살표가 유동 방향입니다." FontSize="11"
+                                   Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                        Background="#E0121923" CornerRadius="10" Padding="12"
+                        Margin="12" IsHitTestVisible="False">
+                    <StackPanel>
+                        <TextBlock Text="X  빨강" Foreground="#FF6666"/>
+                        <TextBlock Text="Y  초록" Foreground="#66E08A"/>
+                        <TextBlock Text="Z  파랑" Foreground="#6AA9FF"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="마우스 왼쪽 드래그: 회전  ·  휠: 확대/축소  ·  이 화면은 방향 확인용이며 실제 CFD 메시를 변경하지 않습니다."
+                       Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="1" x:Name="BoundsText" Margin="20,0,0,0"
+                       Foreground="{StaticResource MutedBrush}" FontFamily="Consolas"
+                       VerticalAlignment="Center"/>
+        </Grid>
+    </Grid>
+</Window>

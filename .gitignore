@@ -1,0 +1,44 @@
+# Build outputs
+bin/
+obj/
+dist/
+publish/
+artifacts/
+
+# IDE and user settings
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.rsuser
+
+# Temporary and generated data
+tmp/
+validation/
+TestResults/
+*.log
+*.tmp
+*.bak
+*.cache
+
+# OpenFOAM runtime outputs and user cases
+processor*/
+postProcessing/
+FoamWorkbenchLogs/
+FoamWorkbenchPlots/
+dynamicCode/
+*.foam
+
+# Local reports retained outside the repository source package
+Implementation-Report.md
+Test-Report.md
+Gravity-Drainage-Test-Report.md
+Proposal-Preset-Test-Report.md
+Porous-Implementation-Audit-*.md
+TreeShield-AB-Final-Validation-Report.md
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
